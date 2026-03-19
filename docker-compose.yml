@@ -1,0 +1,10 @@
+services:
+  langchain_agent:
+    build: .
+    ports:
+      - "5003:5000"
+    environment:
+      - COZE_PROJECT_TYPE=agent
+    volumes:
+      - .:/app
+    command: python src/app.py

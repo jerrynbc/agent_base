@@ -1,0 +1,12 @@
+# 排除不需要复制的文件
+venv/
+.git/
+.gitignore
+*.pyc
+__pycache__/
+*.log
+.env
+*.swp
+*.swo
+*~
+.DS_Store
