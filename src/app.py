@@ -6,14 +6,22 @@ app = Flask(__name__, template_folder='../templates')
 
 @app.route('/')
 def index():
-    return render_template('index.html', config=config.get_config())
+    # 获取配置并添加api_key
+    config_data = config.get_config()
+    if config.api_key:
+        config_data['api_key'] = '************'
+    return render_template('index.html', config=config_data)
 
 @app.route('/api/config', methods=['POST'])
 def update_config():
     """更新配置"""
     config_data = request.json
     agent.update_config(config_data)
-    return jsonify({"status": "success", "config": config.get_config()})
+    # 获取配置并添加api_key
+    config_data = config.get_config()
+    if config.api_key:
+        config_data['api_key'] = '************'
+    return jsonify({"status": "success", "config": config_data})
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
