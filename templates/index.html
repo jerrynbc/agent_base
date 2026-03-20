@@ -21,7 +21,7 @@
 <body class="bg-gray-100 min-h-screen flex flex-col">
     <div class="container mx-auto px-4 py-4 flex-1 flex flex-col lg:flex-row gap-6">
             <!-- 配置面板 -->
-            <div id="config-panel" class="lg:w-1/3 bg-white rounded-lg shadow-md p-6 transition-all duration-300 transform lg:translate-x-0 relative z-10">
+            <div id="config-panel" class="lg:w-1/4 bg-white rounded-lg shadow-md p-6 transition-all duration-300 transform lg:translate-x-0 relative z-10">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-bold flex items-center">
                         <i class="fa fa-cog mr-2 text-blue-500"></i> 模型配置
@@ -73,7 +73,7 @@
                 </button>
             </div>
             <!-- 对话面板 -->
-            <div class="lg:w-2/3 flex flex-col transition-all duration-300 flex-1">
+            <div class="lg:w-2/4 flex flex-col transition-all duration-300 flex-1">
                 <div class="bg-white rounded-lg shadow-md flex-1 flex flex-col h-full">
                     <div class="p-4 border-b border-gray-200 flex justify-between items-center">
                         <h2 class="text-xl font-bold flex items-center">
@@ -94,6 +94,37 @@
                                 <i class="fa fa-paper-plane"></i>
                             </button>
                         </form>
+                    </div>
+                </div>
+            </div>
+            <!-- 预览窗口 -->
+            <div class="lg:w-1/4 flex flex-col transition-all duration-300 flex-1">
+                <div class="bg-white rounded-lg shadow-md flex-1 flex flex-col h-full">
+                    <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                        <h2 class="text-xl font-bold flex items-center">
+                            <i class="fa fa-file-text mr-2 text-green-500"></i> PRD预览
+                        </h2>
+                        <div class="flex gap-2">
+                            <button id="edit-preview" class="text-gray-500 hover:text-gray-700 flex items-center">
+                                <i class="fa fa-pencil mr-1"></i> 编辑
+                            </button>
+                            <button id="save-preview" class="text-gray-500 hover:text-gray-700 flex items-center hidden">
+                                <i class="fa fa-save mr-1"></i> 保存
+                            </button>
+                            <button id="clear-preview" class="text-gray-500 hover:text-gray-700 flex items-center">
+                                <i class="fa fa-trash mr-1"></i> 清空
+                            </button>
+                        </div>
+                    </div>
+                    <div id="preview-content" class="flex-1 p-4 overflow-y-auto space-y-4 max-h-[70vh] min-h-[400px]">
+                        <!-- 预览内容将通过JavaScript动态添加 -->
+                        <div class="text-gray-500 text-center py-8">
+                            <i class="fa fa-file-o fa-3x mb-2"></i>
+                            <p>PRD预览将显示在这里</p>
+                        </div>
+                    </div>
+                    <div id="preview-editor" class="flex-1 p-4 hidden">
+                        <textarea id="preview-textarea" class="w-full h-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="在此编辑PRD内容..."></textarea>
                     </div>
                 </div>
             </div>
@@ -218,6 +249,104 @@
                 });
             }
             
+            // 清空预览
+            const clearPreviewBtn = document.getElementById('clear-preview');
+            if (clearPreviewBtn) {
+                clearPreviewBtn.addEventListener('click', function() {
+                    if (confirm('确定要清空PRD预览吗？')) {
+                        const previewContent = document.getElementById('preview-content');
+                        previewContent.innerHTML = `
+                            <div class="text-gray-500 text-center py-8">
+                                <i class="fa fa-file-o fa-3x mb-2"></i>
+                                <p>PRD预览将显示在这里</p>
+                            </div>
+                        `;
+                    }
+                });
+            }
+            
+            // 编辑预览
+            const editPreviewBtn = document.getElementById('edit-preview');
+            const savePreviewBtn = document.getElementById('save-preview');
+            const previewContent = document.getElementById('preview-content');
+            const previewEditor = document.getElementById('preview-editor');
+            const previewTextarea = document.getElementById('preview-textarea');
+            
+            if (editPreviewBtn && savePreviewBtn) {
+                editPreviewBtn.addEventListener('click', function() {
+                    // 隐藏预览内容，显示编辑器
+                    previewContent.classList.add('hidden');
+                    previewEditor.classList.remove('hidden');
+                    
+                    // 显示保存按钮，隐藏编辑按钮
+                    editPreviewBtn.classList.add('hidden');
+                    savePreviewBtn.classList.remove('hidden');
+                    
+                    // 将预览内容转换为Markdown格式
+                    let markdownContent = '';
+                    const sections = previewContent.querySelectorAll('h1, h2, h3, div');
+                    sections.forEach(section => {
+                        if (section.tagName === 'H1') {
+                            markdownContent += `# ${section.textContent}\n\n`;
+                        } else if (section.tagName === 'H2') {
+                            markdownContent += `## ${section.textContent}\n\n`;
+                        } else if (section.tagName === 'H3') {
+                            markdownContent += `### ${section.textContent}\n\n`;
+                        } else {
+                            // 提取文本内容，移除HTML标签
+                            let text = section.textContent;
+                            markdownContent += `${text}\n\n`;
+                        }
+                    });
+                    
+                    // 设置文本域内容
+                    previewTextarea.value = markdownContent.trim();
+                });
+                
+                savePreviewBtn.addEventListener('click', function() {
+                    // 获取编辑后的内容
+                    const editedContent = previewTextarea.value.trim();
+                    
+                    // 隐藏编辑器，显示预览内容
+                    previewEditor.classList.add('hidden');
+                    previewContent.classList.remove('hidden');
+                    
+                    // 显示编辑按钮，隐藏保存按钮
+                    savePreviewBtn.classList.add('hidden');
+                    editPreviewBtn.classList.remove('hidden');
+                    
+                    // 更新预览内容
+                    if (editedContent) {
+                        // 提取结构化内容
+                        const structuredContent = extractStructuredContent(editedContent);
+                        
+                        // 生成预览内容
+                        let previewHTML = '';
+                        structuredContent.forEach(section => {
+                            if (section.level === 1) {
+                                previewHTML += `<h1 class="text-xl font-bold mb-2">${section.title}</h1>`;
+                            } else if (section.level === 2) {
+                                previewHTML += `<h2 class="text-lg font-bold mb-2">${section.title}</h2>`;
+                            } else if (section.level === 3) {
+                                previewHTML += `<h3 class="text-md font-bold mb-2">${section.title}</h3>`;
+                            }
+                            if (section.content) {
+                                previewHTML += `<div class="ml-${section.level * 4}">${renderMarkdown(section.content)}</div>`;
+                            }
+                        });
+                        
+                        previewContent.innerHTML = previewHTML;
+                    } else {
+                        previewContent.innerHTML = `
+                            <div class="text-gray-500 text-center py-8">
+                                <i class="fa fa-file-o fa-3x mb-2"></i>
+                                <p>PRD预览将显示在这里</p>
+                            </div>
+                        `;
+                    }
+                });
+            }
+            
             // 保存配置
             const configForm = document.getElementById('config-form');
             if (configForm) {
@@ -259,10 +388,10 @@
             try {
                 // 处理换行
                 text = text.replace(/\n/g, '<br>');
-                // 处理粗体
-                text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                // 处理粗体（使用更可靠的正则表达式）
+                text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
                 // 处理斜体
-                text = text.replace(/(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+                text = text.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
                 // 处理代码块
                 text = text.replace(/```([\s\S]*?)```/g, '<pre class="bg-gray-100 p-2 rounded text-sm"><code>$1</code></pre>');
                 // 处理行内代码
@@ -297,6 +426,161 @@
             chatHistory.scrollTop = chatHistory.scrollHeight;
         }
         
+        // 过滤AI交互引导语
+        function filterContent(content) {
+            // 过滤掉常见的AI交互引导语
+            const patterns = [
+                /^您好！.*?开始。/, // 匹配开头的问候语
+                /^我们需要分阶段完成.*?开始。/, // 匹配阶段说明
+                /^请您先提供以上模块.*?编写。/, // 匹配请求用户输入的语句
+                /^请您提供.*?信息，我们完成后再进入下一模块。/, // 匹配请求用户输入的语句
+                /^请您先提供.*?信息，我们完成后再进入模块.*?的编写。/, // 匹配请求用户输入的语句
+                /^我将引导您完成.*?PRD文档编写。/, // 匹配引导语
+                /^现在开始.*?模块的编写。/, // 匹配模块开始语
+                /^接下来.*?模块的内容。/, // 匹配模块转换语
+                /^请提供.*?信息，以便我继续编写。/ // 匹配请求信息的语句
+            ];
+            
+            let filteredContent = content;
+            patterns.forEach(pattern => {
+                filteredContent = filteredContent.replace(pattern, '');
+            });
+            
+            return filteredContent.trim();
+        }
+        
+        // 提取结构化内容
+        function extractStructuredContent(content) {
+            // 提取PRD文档的结构化内容
+            // 基于标题层级进行结构化
+            const lines = content.split('\n');
+            const structuredContent = [];
+            let currentSection = null;
+            
+            lines.forEach(line => {
+                line = line.trim();
+                if (line === '') return;
+                
+                // 匹配标题
+                const headingMatch = line.match(/^(#{1,3})\s+(.*)$/);
+                if (headingMatch) {
+                    const level = headingMatch[1].length;
+                    const title = headingMatch[2];
+                    currentSection = {
+                        level,
+                        title,
+                        content: ''
+                    };
+                    structuredContent.push(currentSection);
+                } else if (currentSection) {
+                    // 添加内容到当前章节
+                    currentSection.content += line + '\n';
+                }
+            });
+            
+            return structuredContent;
+        }
+        
+        // 全局变量存储当前预览的结构化内容
+        let currentStructuredContent = [];
+        
+        // 检测内容是否包含新的PRD章节
+        function detectNewSection(content) {
+            // 检查是否包含PRD章节标题
+            const sectionPatterns = [
+                /^#\s+.+$/, // 一级标题
+                /^##\s+.+$/, // 二级标题
+                /^###\s+.+$/, // 三级标题
+                /^模块\d+：.+$/, // 模块标题
+                /^###\s*[一二三四五六七八九十]+、.+$/, // 中文序号标题
+                /^\d+\.\s+.+$/, // 数字序号标题
+                /^[一二三四五六七八九十]+、.+$/ // 中文序号标题
+            ];
+            
+            return sectionPatterns.some(pattern => pattern.test(content));
+        }
+        
+        // 检测内容是否包含阶段完成提示
+        function detectStageCompletion(content) {
+            // 检查是否包含阶段完成的提示词
+            const completionPatterns = [
+                /模块.*?编写完成/, // 模块完成
+                /章节.*?编写完成/, // 章节完成
+                /阶段.*?完成/, // 阶段完成
+                /本模块.*?结束/, // 模块结束
+                /此章节.*?结束/, // 章节结束
+                /以上是.*?内容/, // 内容总结
+                /请您.*?信息/, // 请求用户输入
+                /需要您提供.*?信息/ // 请求用户输入
+            ];
+            
+            return completionPatterns.some(pattern => pattern.test(content));
+        }
+        
+        // 更新预览窗口
+        function updatePreview(content) {
+            // 过滤AI交互引导语
+            const filteredContent = filterContent(content);
+            if (!filteredContent) return;
+            
+            // 检测是否包含新章节或阶段完成
+            const hasNewSection = detectNewSection(filteredContent);
+            const hasStageCompletion = detectStageCompletion(filteredContent);
+            
+            // 只有当检测到新章节或阶段完成时才更新预览
+            if (!hasNewSection && !hasStageCompletion) return;
+            
+            // 提取结构化内容
+            const newStructuredContent = extractStructuredContent(filteredContent);
+            
+            // 合并结构化内容（增量更新）
+            newStructuredContent.forEach(newSection => {
+                // 检查是否已存在相同标题的章节
+                const existingSectionIndex = currentStructuredContent.findIndex(
+                    section => section.title === newSection.title && section.level === newSection.level
+                );
+                
+                if (existingSectionIndex >= 0) {
+                    // 更新现有章节内容
+                    currentStructuredContent[existingSectionIndex].content = newSection.content;
+                } else {
+                    // 添加新章节
+                    currentStructuredContent.push(newSection);
+                }
+            });
+            
+            // 按标题层级排序
+            currentStructuredContent.sort((a, b) => {
+                if (a.level !== b.level) {
+                    return a.level - b.level;
+                }
+                return a.title.localeCompare(b.title);
+            });
+            
+            // 生成预览内容
+            let previewHTML = '';
+            currentStructuredContent.forEach(section => {
+                if (section.level === 1) {
+                    previewHTML += `<h1 class="text-xl font-bold mb-2">${section.title}</h1>`;
+                } else if (section.level === 2) {
+                    previewHTML += `<h2 class="text-lg font-bold mb-2">${section.title}</h2>`;
+                } else if (section.level === 3) {
+                    previewHTML += `<h3 class="text-md font-bold mb-2">${section.title}</h3>`;
+                }
+                if (section.content) {
+                    previewHTML += `<div class="ml-${section.level * 4}">${renderMarkdown(section.content)}</div>`;
+                }
+            });
+            
+            const previewContent = document.getElementById('preview-content');
+            previewContent.innerHTML = previewHTML || `
+                <div class="text-gray-500 text-center py-8">
+                    <i class="fa fa-file-o fa-3x mb-2"></i>
+                    <p>PRD预览将显示在这里</p>
+                </div>
+            `;
+        }
+        
         // 流式输出消息
         function streamMessageToHistory(role, content) {
             const chatHistory = document.getElementById('chat-history');
@@ -322,6 +606,8 @@
                     chatHistory.scrollTop = chatHistory.scrollHeight;
                 } else {
                     clearInterval(interval);
+                    // 更新预览窗口
+                    updatePreview(content);
                 }
             }, 20);
         }
